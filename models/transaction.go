@@ -6,11 +6,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type TransactionTypes string
+type transactionTypes string
 
 const (
-	Expense TransactionTypes = "expense"
-	Income  TransactionTypes = "income"
+	Expense transactionTypes = "expense"
+	Income  transactionTypes = "income"
 )
 
 type Transaction struct {
@@ -21,6 +21,6 @@ type Transaction struct {
 	Description string           `json:"description"`
 	Value       int64            `json:"value"`
 	Date        time.Time        `json:"date"`
-	Type        TransactionTypes `json:"type"        sql:"type:ENUM('expense','income')"`
+	Type        transactionTypes `json:"type"        sql:"type:ENUM('expense','income')"`
 	Completed   bool             `json:"completed"`
 }
