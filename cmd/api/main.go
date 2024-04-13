@@ -22,5 +22,7 @@ func main() {
 	r.PUT("/user/:id", handlers.UpdateUser)
 	r.DELETE("/user/:id", handlers.DeleteUser)
 
+	r.POST("/login", handlers.Login)
+
 	r.Run(":2024")
 }
