@@ -15,12 +15,12 @@ const (
 
 type Transaction struct {
 	gorm.Model
-	AccountID   uint
-	CategoryID  uint
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	Value       int64            `json:"value"`
-	Date        time.Time        `json:"date"`
-	Type        transactionTypes `json:"type"        sql:"type:ENUM('expense','income')"`
-	Completed   bool             `json:"completed"`
+	AccountID             uint
+	TransactionCategoryID uint
+	Name                  string           `json:"name"`
+	Description           string           `json:"description"`
+	Value                 int64            `json:"value"`
+	Date                  time.Time        `json:"date"`
+	Type                  transactionTypes `json:"type"        sql:"type:ENUM('expense','income')"`
+	Completed             bool             `json:"completed"`
 }
