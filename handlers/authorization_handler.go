@@ -50,8 +50,7 @@ func Signup(c *gin.Context) {
 	}
 
 	c.SetCookie("token", token, 3600, "/", "localhost", false, true)
-
-	c.Redirect(http.StatusFound, "/")
+	c.JSON(http.StatusOK, gin.H{"message": "logged in successfully"})
 }
 
 func Login(c *gin.Context) {
@@ -81,8 +80,31 @@ func Login(c *gin.Context) {
 	}
 
 	c.SetCookie("token", token, 3600, "/", "localhost", false, true)
+	c.JSON(http.StatusOK, gin.H{"message": "logged in successfully"})
+}
 
-	c.Redirect(http.StatusFound, "/")
+func CheckLogin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token, err := c.Cookie("token")
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "you are not logged in!"})
+			return
+		}
+
+		_, err = jwt.ParseWithClaims(
+			token,
+			jwt.MapClaims{},
+			func(token *jwt.Token) (interface{}, error) {
+				return secretKey, nil
+			},
+		)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token!"})
+			return
+		}
+
+		c.Next()
+	}
 }
 
 func createToken(id uint) (string, error) {
