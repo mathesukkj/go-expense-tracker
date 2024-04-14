@@ -13,6 +13,47 @@ import (
 
 var secretKey = []byte("my-secret-string")
 
+func Signup(c *gin.Context) {
+	if _, err := c.Cookie("token"); err == nil {
+		c.Redirect(http.StatusFound, "/")
+		return
+	}
+
+	var signupData models.UserPayload
+	if err := c.ShouldBindJSON(&signupData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword(
+		[]byte(signupData.Password),
+		bcrypt.DefaultCost,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while hashing password!"})
+		return
+	}
+	signupData.Password = string(hashedPassword)
+
+	newUser := models.User{
+		Name:     signupData.Name,
+		Password: signupData.Password,
+		Email:    signupData.Email,
+	}
+
+	db.Gorm.Create(&newUser)
+
+	token, err := createToken(newUser.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "thats weird. an error happened!"})
+		return
+	}
+
+	c.SetCookie("token", token, 3600, "/", "localhost", false, true)
+
+	c.Redirect(http.StatusFound, "/")
+}
+
 func Login(c *gin.Context) {
 	if _, err := c.Cookie("token"); err == nil {
 		c.Redirect(http.StatusFound, "/")
@@ -36,6 +77,7 @@ func Login(c *gin.Context) {
 	token, err := createToken(user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "thats weird. an error happened!"})
+		return
 	}
 
 	c.SetCookie("token", token, 3600, "/", "localhost", false, true)

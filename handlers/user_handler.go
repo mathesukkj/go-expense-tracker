@@ -10,29 +10,6 @@ import (
 	"go-expense-tracker/models"
 )
 
-func CreateUser(c *gin.Context) {
-	var user models.UserPayload
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while hashing password!"})
-		return
-	}
-	user.Password = string(hashedPassword)
-
-	db.Gorm.Create(&models.User{
-		Name:     user.Name,
-		Password: user.Password,
-		Email:    user.Email,
-	})
-
-	c.Status(http.StatusCreated)
-}
-
 func GetUsers(c *gin.Context) {
 	var users []models.User
 
