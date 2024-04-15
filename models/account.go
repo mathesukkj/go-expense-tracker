@@ -9,3 +9,8 @@ type Account struct {
 	Balance      int64  `json:"balance"`
 	Transactions []Transaction
 }
+
+type AccountPayload struct {
+	Name    string `json:"name"`
+	Balance int64  `json:"balance"`
+}
