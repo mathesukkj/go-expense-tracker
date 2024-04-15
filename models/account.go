@@ -11,6 +11,7 @@ type Account struct {
 }
 
 type AccountPayload struct {
-	Name    string `json:"name"`
-	Balance int64  `json:"balance"`
+	UserID  uint   `json:"-"`
+	Name    string `json:"name"    binding:"required"`
+	Balance int64  `json:"balance" default:0`
 }

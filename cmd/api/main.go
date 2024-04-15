@@ -26,6 +26,12 @@ func main() {
 		authorized.GET("/user/:id", handlers.GetUser)
 		authorized.PUT("/user/:id", handlers.UpdateUser)
 		authorized.DELETE("/user/:id", handlers.DeleteUser)
+
+		authorized.GET("/account", handlers.GetAccounts)
+		authorized.GET("/account/:id", handlers.GetAccount)
+		authorized.POST("/account", handlers.CreateAccount)
+		authorized.PUT("/account/:id", handlers.UpdateAccount)
+		authorized.DELETE("/account/:id", handlers.DeleteAccount)
 	}
 
 	r.Run(":2024")

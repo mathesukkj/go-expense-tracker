@@ -25,6 +25,37 @@ func GetAccount(c *gin.Context) {
 	c.JSON(http.StatusOK, &account)
 }
 
+func CreateAccount(c *gin.Context) {
+	var accountPayload models.AccountPayload
+	if err := c.ShouldBindJSON(&accountPayload); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userId, ok := c.Get("uid")
+	if !ok {
+		c.AbortWithStatusJSON(
+			http.StatusBadRequest,
+			gin.H{"error": "user not found. please login again"},
+		)
+		return
+	}
+
+	account := models.Account{
+		UserID:  userId.(uint),
+		Name:    accountPayload.Name,
+		Balance: accountPayload.Balance,
+	}
+
+	result := db.Gorm.Create(&account)
+	if result.Error != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"status": "success"})
+}
+
 func UpdateAccount(c *gin.Context) {
 	var account models.AccountPayload
 	var foundAccount models.Account
