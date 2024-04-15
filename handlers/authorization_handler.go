@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -98,16 +99,16 @@ func CheckLogin() gin.HandlerFunc {
 			return
 		}
 
-		userID, ok := claims["id"].(uint)
+		userID, ok := claims["id"].(float64)
 		if !ok {
 			c.AbortWithStatusJSON(
-				http.StatusUnauthorized,
+				http.StatusBadRequest,
 				gin.H{"error": "invalid user ID in token"},
 			)
 			return
 		}
 
-		c.Set("uid", userID)
+		c.Set("uid", uint(userID))
 		c.Next()
 	}
 }
