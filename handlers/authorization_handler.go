@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -91,29 +92,45 @@ func CheckLogin() gin.HandlerFunc {
 			return
 		}
 
-		_, err = jwt.ParseWithClaims(
-			token,
-			jwt.MapClaims{},
-			func(token *jwt.Token) (interface{}, error) {
-				return secretKey, nil
-			},
-		)
+		claims, err := getClaimsFromToken(token)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token!"})
 			return
 		}
 
+		userID, ok := claims["id"].(uint)
+		if !ok {
+			c.AbortWithStatusJSON(
+				http.StatusUnauthorized,
+				gin.H{"error": "invalid user ID in token"},
+			)
+			return
+		}
+
+		c.Set("uid", userID)
 		c.Next()
 	}
 }
 
-func createToken(id uint) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"id": id})
-
-	tokenStr, err := token.SignedString(secretKey)
-	if err != nil {
-		return "", err
+func getClaimsFromToken(tokenStr string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		return secretKey, nil
+	})
+	if err != nil || !token.Valid {
+		return nil, errors.New("invalid token")
 	}
 
-	return tokenStr, nil
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
+	}
+
+	return claims, nil
+}
+
+func createToken(id uint) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id": id,
+	})
+	return token.SignedString(secretKey)
 }
