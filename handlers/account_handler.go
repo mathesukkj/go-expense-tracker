@@ -20,8 +20,10 @@ func GetAccounts(c *gin.Context) {
 func GetAccount(c *gin.Context) {
 	var account models.Account
 
-	db.Gorm.Find(&account, c.Param("id"))
-
+	result := db.Gorm.Find(&account, c.Param("id"))
+	if result.Error != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "account not found"})
+	}
 	c.JSON(http.StatusOK, &account)
 }
 

@@ -21,7 +21,10 @@ func GetUsers(c *gin.Context) {
 func GetUser(c *gin.Context) {
 	var user models.User
 
-	db.Gorm.Find(&user, c.Param("id"))
+	result := db.Gorm.Find(&user, c.Param("id"))
+	if result.Error != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "user not found"})
+	}
 
 	c.JSON(http.StatusOK, &user)
 }
