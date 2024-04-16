@@ -12,7 +12,16 @@ import (
 func GetAccounts(c *gin.Context) {
 	var accounts []models.Account
 
-	db.Gorm.Find(&accounts)
+	userId, ok := c.Get("uid")
+	if !ok {
+		c.AbortWithStatusJSON(
+			http.StatusUnauthorized,
+			gin.H{"error": "user not found. please login again"},
+		)
+		return
+	}
+
+	db.Gorm.Find(&accounts, "user_id = ?", userId)
 
 	c.JSON(http.StatusOK, &accounts)
 }
@@ -20,9 +29,19 @@ func GetAccounts(c *gin.Context) {
 func GetAccount(c *gin.Context) {
 	var account models.Account
 
-	result := db.Gorm.Find(&account, c.Param("id"))
+	userId, ok := c.Get("uid")
+	if !ok {
+		c.AbortWithStatusJSON(
+			http.StatusUnauthorized,
+			gin.H{"error": "user not found. please login again"},
+		)
+		return
+	}
+
+	result := db.Gorm.Find(&account, c.Param("id"), "user_id = ?", userId)
 	if result.Error != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "account not found"})
+		return
 	}
 	c.JSON(http.StatusOK, &account)
 }
