@@ -84,6 +84,12 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "logged in successfully"})
 }
 
+func Signout(c *gin.Context) {
+	c.SetCookie("token", "", -1, "/", "localhost", false, true)
+
+	c.JSON(http.StatusOK, gin.H{"message": "signed out succesfully"})
+}
+
 func CheckLogin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie("token")

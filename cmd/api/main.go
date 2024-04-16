@@ -22,6 +22,8 @@ func main() {
 	authorized := r.Group("/")
 	authorized.Use(handlers.CheckLogin())
 	{
+		authorized.POST("/signout", handlers.Signout)
+
 		authorized.GET("/user", handlers.GetUsers)
 		authorized.GET("/user/:id", handlers.GetUser)
 		authorized.PUT("/user/:id", handlers.UpdateUser)
