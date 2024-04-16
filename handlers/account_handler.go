@@ -38,7 +38,7 @@ func GetAccount(c *gin.Context) {
 		return
 	}
 
-	result := db.Gorm.Find(&account, c.Param("id"), "user_id = ?", userId)
+	result := db.Gorm.First(&account, c.Param("id"), "user_id = ?", userId)
 	if result.Error != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "account not found"})
 		return
