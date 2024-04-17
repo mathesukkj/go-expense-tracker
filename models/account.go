@@ -4,10 +4,10 @@ import "gorm.io/gorm"
 
 type Account struct {
 	gorm.Model
-	UserID       uint
-	Name         string `json:"name"`
-	Balance      int64  `json:"balance"`
-	Transactions []Transaction
+	UserID       uint          `json:"user_id"`
+	Name         string        `json:"name"`
+	Balance      int64         `json:"balance"`
+	Transactions []Transaction `json:"-"`
 }
 
 type AccountPayload struct {
