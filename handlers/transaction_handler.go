@@ -82,7 +82,7 @@ func CreateTransaction(c *gin.Context) {
 		Date:                  transactionPayload.Date,
 		Type:                  transactionPayload.Type,
 		Completed:             transactionPayload.Completed,
-		TransactionCategoryID: 0,
+		TransactionCategoryID: transactionPayload.TransactionCategoryID,
 	}
 
 	result := db.Gorm.Create(&transaction)
@@ -118,6 +118,7 @@ func UpdateTransaction(c *gin.Context) {
 	foundTransaction.Completed = transaction.Completed
 	foundTransaction.Date = transaction.Date
 	foundTransaction.Type = transaction.Type
+	foundTransaction.TransactionCategoryID = transaction.TransactionCategoryID
 
 	db.Gorm.Save(&foundTransaction)
 
