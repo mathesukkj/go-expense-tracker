@@ -4,11 +4,11 @@ import "gorm.io/gorm"
 
 type TransactionCategory struct {
 	gorm.Model
-	UserID       uint
-	IconUrl      string `json:"icon_url"`
-	ColorHex     string `json:"color_hex"`
-	Name         string `json:"name"`
-	Transactions []Transaction
+	UserID       uint          `json:"-"`
+	IconUrl      string        `json:"icon_url"`
+	ColorHex     string        `json:"color_hex"`
+	Name         string        `json:"name"`
+	Transactions []Transaction `json:"-"`
 }
 
 type TransactionCategoryPayload struct {

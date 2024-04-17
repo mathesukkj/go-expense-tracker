@@ -15,8 +15,8 @@ const (
 
 type Transaction struct {
 	gorm.Model
-	AccountID             uint
-	TransactionCategoryID uint
+	AccountID             uint             `json:"account_id"`
+	TransactionCategoryID uint             `json:"category_id"`
 	Description           string           `json:"description"`
 	Value                 int64            `json:"value"`
 	Date                  time.Time        `json:"date"`
@@ -30,6 +30,6 @@ type TransactionPayload struct {
 	Description           string           `json:"description" binding:"required"`
 	Value                 int64            `json:"value"       binding:"required"`
 	Date                  time.Time        `json:"date"        binding:"required"`
-	Type                  transactionTypes `json:"type"        binding:"required,enum"`
-	Completed             bool             `json:"completed"                           default:"false"`
+	Type                  transactionTypes `json:"type"        binding:"required,oneof=expense income"`
+	Completed             bool             `json:"completed"                                           default:"false"`
 }
