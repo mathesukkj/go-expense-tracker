@@ -40,6 +40,12 @@ func main() {
 		authorized.POST("/transaction", handlers.CreateTransaction)
 		authorized.PUT("/transaction/:id", handlers.UpdateTransaction)
 		authorized.DELETE("/transaction/:id", handlers.DeleteTransaction)
+
+		authorized.GET("/transaction-category", handlers.GetTransactionCategories)
+		authorized.GET("/transaction-category/:id", handlers.GetTransactionCategory)
+		authorized.POST("/transaction-category", handlers.CreateTransactionCategory)
+		authorized.PUT("/transaction-category/:id", handlers.UpdateTransactionCategory)
+		authorized.DELETE("/transaction-category/:id", handlers.DeleteTransactionCategory)
 	}
 
 	r.Run(":2024")
