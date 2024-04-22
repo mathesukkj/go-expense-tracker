@@ -46,6 +46,10 @@ func main() {
 		authorized.POST("/transaction-category", handlers.CreateTransactionCategory)
 		authorized.PUT("/transaction-category/:id", handlers.UpdateTransactionCategory)
 		authorized.DELETE("/transaction-category/:id", handlers.DeleteTransactionCategory)
+
+		authorized.GET("/dashboard/current-balance", handlers.GetCurrentBalance)
+		authorized.GET("/dashboard/total-income", handlers.GetTotalIncome)
+		authorized.GET("/dashboard/total-expense", handlers.GetTotalExpense)
 	}
 
 	r.Run(":2024")
