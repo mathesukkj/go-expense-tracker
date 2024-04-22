@@ -1,0 +1,6 @@
+.air.toml
+.dockerignore
+docker-compose.yml
+README.md
+.git
+Dockerfile
