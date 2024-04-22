@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -52,5 +53,8 @@ func main() {
 		authorized.GET("/dashboard/total-expense", handlers.GetTotalExpense)
 	}
 
-	r.Run(":2024")
+	port := flag.String("port", "8080", "define the port of the app")
+	flag.Parse()
+
+	r.Run(":" + *port)
 }
