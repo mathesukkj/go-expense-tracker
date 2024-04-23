@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/joho/godotenv/autoload"
 
 	"go-expense-tracker/db"
 	"go-expense-tracker/handlers"
