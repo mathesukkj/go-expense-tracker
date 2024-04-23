@@ -2,9 +2,31 @@ services:
   db:
     image: postgres
     restart: always
-    volumes:
-      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
-      POSTGRES_PASSWORD: "password"
+      POSTGRES_USER: mathesu
+      POSTGRES_DB: expense_tracker
+      POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - 5432:5432
+    networks: 
+      - expense-tracker
+
+  app:
+    build: .
+    container_name: go-expense-tracker
+    ports:
+      - 2024:80
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db 
+      DB_PORT: 5432
+      DB_USER: mathesu
+      DB_PASSWORD: password
+      DB_NAME: expense_tracker
+    networks:
+      - expense-tracker
+
+networks:
+  expense-tracker:
+    driver: bridge

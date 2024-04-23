@@ -10,6 +10,6 @@ COPY . ./
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /go-expense-tracker ./cmd/api/main.go
 
-EXPOSE 8080
+EXPOSE 80
 
-CMD ["/go-expense-tracker", "--port", "8080"]
+CMD ["/go-expense-tracker", "--port", "80"]
