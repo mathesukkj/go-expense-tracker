@@ -7,7 +7,7 @@ type TransactionCategory struct {
 	UserID       uint          `json:"-"`
 	IconUrl      string        `json:"icon_url"`
 	ColorHex     string        `json:"color_hex"`
-	Name         string        `json:"name"`
+	Name         string        `json:"name"      gorm:"index"`
 	Transactions []Transaction `json:"-"`
 }
 
