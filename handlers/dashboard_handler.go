@@ -1,51 +1,43 @@
 package handlers
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"go-expense-tracker/db"
 	"go-expense-tracker/models"
+	cache "go-expense-tracker/redis"
 )
 
 func GetCurrentBalance(c *gin.Context) {
-	var currentBalance int
-
-	userId, ok := c.Get("uid")
-	if !ok {
-		c.AbortWithStatusJSON(
-			http.StatusUnauthorized,
-			gin.H{"error": "user not found. please login again"},
-		)
-		return
-	}
-
-	GetTotalTransactionValue("", currentBalance, userId.(uint))
-
-	c.JSON(http.StatusOK, gin.H{"value": currentBalance})
+	DefaultDashboardFunc(c, "currentBalance", "")
+	return
 }
 
 func GetTotalIncome(c *gin.Context) {
-	var totalIncome int
-
-	userId, ok := c.Get("uid")
-	if !ok {
-		c.AbortWithStatusJSON(
-			http.StatusUnauthorized,
-			gin.H{"error": "user not found. please login again"},
-		)
-		return
-	}
-
-	GetTotalTransactionValue("value > 0", totalIncome, userId.(uint))
-
-	c.JSON(http.StatusOK, gin.H{"value": totalIncome})
+	DefaultDashboardFunc(c, "totalIncome", "value > 0")
+	return
 }
 
 func GetTotalExpense(c *gin.Context) {
-	var totalExpense int
+	DefaultDashboardFunc(c, "totalExpense", "value < 0")
+	return
+}
+
+func DefaultDashboardFunc(c *gin.Context, cacheKey, query string) {
+	var value int
+
+	cachedVal, err := cache.Get(c, cacheKey)
+	if err == nil {
+		c.JSON(http.StatusOK, gin.H{"value": cachedVal})
+		fmt.Println("em cache")
+		return
+	}
 
 	userId, ok := c.Get("uid")
 	if !ok {
@@ -56,9 +48,16 @@ func GetTotalExpense(c *gin.Context) {
 		return
 	}
 
-	GetTotalTransactionValue("value < 0", totalExpense, userId.(uint))
+	GetTotalTransactionValue(query, value, userId.(uint))
 
-	c.JSON(http.StatusOK, gin.H{"value": totalExpense})
+	formattedValue := fmt.Sprintf("R$%.2f", float64(value)/100)
+
+	err = cache.Set(c, "currentBalance", formattedValue, time.Minute*5)
+	if err != nil {
+		log.Println(err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"value": value})
 }
 
 func GetTotalTransactionValue(query string, value int, userId uint) {

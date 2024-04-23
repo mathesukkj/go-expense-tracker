@@ -9,6 +9,7 @@ import (
 
 	"go-expense-tracker/db"
 	"go-expense-tracker/handlers"
+	cache "go-expense-tracker/redis"
 )
 
 func main() {
@@ -17,6 +18,8 @@ func main() {
 	if err := db.Init(); err != nil {
 		log.Fatal("couldnt connect to the database!")
 	}
+
+	cache.Init()
 
 	r.POST("/login", handlers.Login)
 	r.POST("/signup", handlers.Signup)
