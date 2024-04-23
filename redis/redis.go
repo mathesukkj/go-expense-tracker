@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"errors"
+	"log"
 	"os"
 	"time"
 
@@ -35,4 +36,11 @@ func Set(c *gin.Context, key, value string, duration time.Duration) error {
 		return errors.New(redisErr.Error())
 	}
 	return nil
+}
+
+func Del(c *gin.Context, keys ...string) {
+	_, err := Redis.Del(c.Request.Context(), keys...).Result()
+	if err != nil {
+		log.Println(err)
+	}
 }

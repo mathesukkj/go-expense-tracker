@@ -8,6 +8,7 @@ import (
 
 	"go-expense-tracker/db"
 	"go-expense-tracker/models"
+	cache "go-expense-tracker/redis"
 )
 
 func GetTransactions(c *gin.Context) {
@@ -100,6 +101,8 @@ func CreateTransaction(c *gin.Context) {
 		return
 	}
 
+	invalidateCache(c)
+
 	c.JSON(http.StatusCreated, gin.H{"status": "success"})
 }
 
@@ -122,11 +125,15 @@ func UpdateTransaction(c *gin.Context) {
 
 	db.Gorm.Save(&foundTransaction)
 
+	invalidateCache(c)
+
 	c.JSON(http.StatusOK, &foundTransaction)
 }
 
 func DeleteTransaction(c *gin.Context) {
 	db.Gorm.Delete(&models.Transaction{}, c.Param("id"))
+
+	invalidateCache(c)
 
 	c.Status(204)
 }
@@ -139,4 +146,8 @@ func checkUser(accountId, userId uint) error {
 		return errors.New("account doesnt belonng to this user!")
 	}
 	return nil
+}
+
+func invalidateCache(c *gin.Context) {
+	cache.Del(c, "currentBalance", "totalIncome", "totalExpense")
 }
