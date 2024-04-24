@@ -20,6 +20,9 @@ func Init() {
 		Password: "",
 		DB:       0,
 	})
+	if err := Redis.Ping(ctx).Err(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func Get(c *gin.Context, key string) (string, error) {
