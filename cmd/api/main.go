@@ -55,6 +55,7 @@ func main() {
 		authorized.GET("/dashboard/current-balance", handlers.GetCurrentBalance)
 		authorized.GET("/dashboard/total-income", handlers.GetTotalIncome)
 		authorized.GET("/dashboard/total-expense", handlers.GetTotalExpense)
+		authorized.GET("/dashboard/month-balance", handlers.GetMonthlyBalance)
 	}
 
 	port := flag.String("port", "8080", "define the port of the app")
