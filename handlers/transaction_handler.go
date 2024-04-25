@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -23,9 +24,43 @@ func GetTransactions(c *gin.Context) {
 		return
 	}
 
-	accountsIds := db.Gorm.Model(models.Account{}).Where("user_id = ?", userId).Select("id")
+	category := c.Query("category_id")
+	account := c.Query("account_id")
+	transactionType := c.Query("transaction_type")
 
-	db.Gorm.Where("account_id in (?)", accountsIds).Find(&transactions)
+	dbQuery := db.Gorm.Model(&models.Transaction{})
+
+	if category != "" {
+		id, err := strconv.Atoi(category)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "category_id isnt a number"})
+			return
+		}
+		dbQuery = dbQuery.Where("transaction_category_id = ?", id)
+	}
+
+	if account != "" {
+		id, err := strconv.Atoi(account)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "account_id isnt a number"})
+			return
+		}
+		dbQuery = dbQuery.Where("account_id = ?", id)
+	} else {
+		accountsIds := db.Gorm.Model(models.Account{}).Where("user_id = ?", userId).Select("id")
+		dbQuery = dbQuery.Where("account_id in (?)", accountsIds)
+	}
+
+	if transactionType != "" {
+		switch transactionType {
+		case "expense":
+			dbQuery = dbQuery.Where("value < 0")
+		case "income":
+			dbQuery = dbQuery.Where("value > 0")
+		}
+	}
+
+	dbQuery.Find(&transactions)
 
 	c.JSON(http.StatusOK, &transactions)
 }
