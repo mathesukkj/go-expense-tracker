@@ -24,12 +24,9 @@ func GetTransactions(c *gin.Context) {
 		return
 	}
 
-	category := c.Query("category_id")
-	account := c.Query("account_id")
-	transactionType := c.Query("transaction_type")
-
 	dbQuery := db.Gorm.Model(&models.Transaction{})
 
+	category := c.Query("category_id")
 	if category != "" {
 		id, err := strconv.Atoi(category)
 		if err != nil {
@@ -39,6 +36,7 @@ func GetTransactions(c *gin.Context) {
 		dbQuery = dbQuery.Where("transaction_category_id = ?", id)
 	}
 
+	account := c.Query("account_id")
 	if account != "" {
 		id, err := strconv.Atoi(account)
 		if err != nil {
@@ -51,6 +49,7 @@ func GetTransactions(c *gin.Context) {
 		dbQuery = dbQuery.Where("account_id in (?)", accountsIds)
 	}
 
+	transactionType := c.Query("transaction_type")
 	if transactionType != "" {
 		switch transactionType {
 		case "expense":
@@ -58,6 +57,11 @@ func GetTransactions(c *gin.Context) {
 		case "income":
 			dbQuery = dbQuery.Where("value > 0")
 		}
+	}
+
+	search := c.Query("search")
+	if search != "" {
+		dbQuery = dbQuery.Where("description LIKE ?", "%"+search+"%")
 	}
 
 	dbQuery.Find(&transactions)
