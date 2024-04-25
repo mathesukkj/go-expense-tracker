@@ -7,40 +7,31 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"go-expense-tracker/db"
-	"go-expense-tracker/models"
-	cache "go-expense-tracker/redis"
+	"go-expense-tracker/internal/db"
+	"go-expense-tracker/internal/models"
+	cache "go-expense-tracker/internal/redis"
 )
 
 func GetTransactions(c *gin.Context) {
 	var transactions []models.Transaction
 
-	userId, ok := c.Get("uid")
-	if !ok {
-		c.AbortWithStatusJSON(
-			http.StatusUnauthorized,
-			gin.H{"error": "user not found. please login again"},
-		)
-		return
-	}
+	userId := c.MustGet("userId").(uint)
 
 	dbQuery := db.Gorm.Model(&models.Transaction{})
 
-	category := c.Query("category_id")
-	if category != "" {
+	if category := c.Query("category_id"); category != "" {
 		id, err := strconv.Atoi(category)
 		if err != nil {
-			c.JSON(400, gin.H{"error": "category_id isnt a number"})
+			c.JSON(400, gin.H{"error": "category_id must be a number"})
 			return
 		}
 		dbQuery = dbQuery.Where("transaction_category_id = ?", id)
 	}
 
-	account := c.Query("account_id")
-	if account != "" {
+	if account := c.Query("account_id"); account != "" {
 		id, err := strconv.Atoi(account)
 		if err != nil {
-			c.JSON(400, gin.H{"error": "account_id isnt a number"})
+			c.JSON(400, gin.H{"error": "account_id must be a number"})
 			return
 		}
 		dbQuery = dbQuery.Where("account_id = ?", id)
@@ -49,8 +40,7 @@ func GetTransactions(c *gin.Context) {
 		dbQuery = dbQuery.Where("account_id in (?)", accountsIds)
 	}
 
-	transactionType := c.Query("transaction_type")
-	if transactionType != "" {
+	if transactionType := c.Query("transaction_type"); transactionType != "" {
 		switch transactionType {
 		case "expense":
 			dbQuery = dbQuery.Where("value < 0")
@@ -59,8 +49,7 @@ func GetTransactions(c *gin.Context) {
 		}
 	}
 
-	search := c.Query("search")
-	if search != "" {
+	if search := c.Query("search"); search != "" {
 		dbQuery = dbQuery.Where("description LIKE ?", "%"+search+"%")
 	}
 
@@ -72,23 +61,14 @@ func GetTransactions(c *gin.Context) {
 func GetTransaction(c *gin.Context) {
 	var transaction models.Transaction
 
-	result := db.Gorm.First(&transaction, c.Param("id"))
-	if result.Error != nil {
+	if err := db.Gorm.First(&transaction, c.Param("id")).Error; err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "transaction not found"})
 		return
 	}
 
-	userId, ok := c.Get("uid")
-	if !ok {
-		c.AbortWithStatusJSON(
-			http.StatusUnauthorized,
-			gin.H{"error": "user not found. please login again"},
-		)
-		return
-	}
+	userId := c.MustGet("userId").(uint)
 
-	err := checkUser(transaction.AccountID, userId.(uint))
-	if err != nil {
+	if err := checkUser(transaction.AccountID, userId); err != nil {
 		c.AbortWithStatusJSON(
 			http.StatusUnauthorized,
 			gin.H{"error": "this account doesnt belong to you!"},
@@ -102,18 +82,11 @@ func GetTransaction(c *gin.Context) {
 func CreateTransaction(c *gin.Context) {
 	var transactionPayload models.TransactionPayload
 	if err := c.ShouldBindJSON(&transactionPayload); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, responseInvalidReqBody)
 		return
 	}
 
-	userId, ok := c.Get("uid")
-	if !ok {
-		c.AbortWithStatusJSON(
-			http.StatusBadRequest,
-			gin.H{"error": "user not found. please login again"},
-		)
-		return
-	}
+	userId := c.MustGet("userId").(uint)
 
 	transaction := models.Transaction{
 		Description:           transactionPayload.Description,
@@ -125,14 +98,12 @@ func CreateTransaction(c *gin.Context) {
 		TransactionCategoryID: transactionPayload.TransactionCategoryID,
 	}
 
-	result := db.Gorm.Create(&transaction)
-	if result.Error != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
+	if err := db.Gorm.Create(&transaction).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "failed to create transaction"})
 		return
 	}
 
-	err := checkUser(transaction.AccountID, userId.(uint))
-	if err != nil {
+	if err := checkUser(transaction.AccountID, userId); err != nil {
 		c.AbortWithStatusJSON(
 			http.StatusUnauthorized,
 			gin.H{"error": "this account doesnt belong to you!"},
@@ -148,12 +119,25 @@ func CreateTransaction(c *gin.Context) {
 func UpdateTransaction(c *gin.Context) {
 	var transaction models.TransactionPayload
 	var foundTransaction models.Transaction
+
 	if err := c.ShouldBindJSON(&transaction); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, responseInvalidReqBody)
 		return
 	}
 
-	db.Gorm.Find(&foundTransaction, c.Param("id"))
+	if err := db.Gorm.Find(&foundTransaction, c.Param("id")).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, notFoundResponse("transaction"))
+		return
+	}
+
+	userId := c.MustGet("userId").(uint)
+	if err := checkUser(transaction.AccountID, userId); err != nil {
+		c.AbortWithStatusJSON(
+			http.StatusUnauthorized,
+			gin.H{"error": "this account doesnt belong to you!"},
+		)
+		return
+	}
 
 	foundTransaction.Value = transaction.Value
 	foundTransaction.Description = transaction.Description
@@ -170,7 +154,23 @@ func UpdateTransaction(c *gin.Context) {
 }
 
 func DeleteTransaction(c *gin.Context) {
-	db.Gorm.Delete(&models.Transaction{}, c.Param("id"))
+	userId := c.MustGet("userId").(uint)
+
+	var transaction models.Transaction
+	if err := db.Gorm.First(&transaction, c.Param("id")).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "transaction not found"})
+		return
+	}
+
+	if err := checkUser(transaction.AccountID, userId); err != nil {
+		c.AbortWithStatusJSON(
+			http.StatusUnauthorized,
+			gin.H{"error": "this account doesnt belong to you!"},
+		)
+		return
+	}
+
+	db.Gorm.Delete(transaction)
 
 	invalidateCache(c)
 

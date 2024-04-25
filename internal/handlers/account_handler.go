@@ -5,21 +5,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"go-expense-tracker/db"
-	"go-expense-tracker/models"
+	"go-expense-tracker/internal/db"
+	"go-expense-tracker/internal/models"
 )
 
 func GetAccounts(c *gin.Context) {
 	var accounts []models.Account
 
-	userId, ok := c.Get("uid")
-	if !ok {
-		c.AbortWithStatusJSON(
-			http.StatusUnauthorized,
-			gin.H{"error": "user not found. please login again"},
-		)
-		return
-	}
+	userId := c.MustGet("userId").(uint)
 
 	db.Gorm.Find(&accounts, "user_id = ?", userId)
 
@@ -29,48 +22,34 @@ func GetAccounts(c *gin.Context) {
 func GetAccount(c *gin.Context) {
 	var account models.Account
 
-	userId, ok := c.Get("uid")
-	if !ok {
-		c.AbortWithStatusJSON(
-			http.StatusUnauthorized,
-			gin.H{"error": "user not found. please login again"},
-		)
-		return
-	}
+	userId := c.MustGet("userId").(uint)
 
 	result := db.Gorm.First(&account, c.Param("id"), "user_id = ?", userId)
 	if result.Error != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "account not found"})
+		c.AbortWithStatusJSON(http.StatusNotFound, notFoundResponse("account"))
 		return
 	}
+
 	c.JSON(http.StatusOK, &account)
 }
 
 func CreateAccount(c *gin.Context) {
 	var accountPayload models.AccountPayload
 	if err := c.ShouldBindJSON(&accountPayload); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, responseInvalidReqBody)
 		return
 	}
 
-	userId, ok := c.Get("uid")
-	if !ok {
-		c.AbortWithStatusJSON(
-			http.StatusBadRequest,
-			gin.H{"error": "user not found. please login again"},
-		)
-		return
-	}
+	userId := c.MustGet("userId").(uint)
 
 	account := models.Account{
-		UserID:  userId.(uint),
+		UserID:  userId,
 		Name:    accountPayload.Name,
 		Balance: accountPayload.Balance,
 	}
 
-	result := db.Gorm.Create(&account)
-	if result.Error != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
+	if err := db.Gorm.Create(&account).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "failed to create account"})
 		return
 	}
 
@@ -80,12 +59,18 @@ func CreateAccount(c *gin.Context) {
 func UpdateAccount(c *gin.Context) {
 	var account models.AccountPayload
 	var foundAccount models.Account
+
 	if err := c.ShouldBindJSON(&account); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, responseInvalidReqBody)
 		return
 	}
 
-	db.Gorm.Find(&foundAccount, c.Param("id"))
+	userId := c.MustGet("userId").(uint)
+
+	if err := db.Gorm.Find(&foundAccount, c.Param("id"), "user_id = ?", userId).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, notFoundResponse("account"))
+		return
+	}
 
 	foundAccount.Name = account.Name
 	foundAccount.Balance = account.Balance
@@ -96,7 +81,12 @@ func UpdateAccount(c *gin.Context) {
 }
 
 func DeleteAccount(c *gin.Context) {
-	db.Gorm.Delete(&models.Account{}, c.Param("id"))
+	userId := c.MustGet("userId").(uint)
+
+	if err := db.Gorm.Delete(&models.Account{}, c.Param("id"), "user_id = ?", userId).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, notFoundResponse("account"))
+		return
+	}
 
 	c.Status(204)
 }

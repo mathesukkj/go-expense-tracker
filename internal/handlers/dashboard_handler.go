@@ -9,10 +9,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"go-expense-tracker/db"
-	"go-expense-tracker/models"
-	cache "go-expense-tracker/redis"
-	datefmt "go-expense-tracker/utils"
+	"go-expense-tracker/internal/db"
+	"go-expense-tracker/internal/models"
+	cache "go-expense-tracker/internal/redis"
+	datefmt "go-expense-tracker/internal/utils"
 )
 
 func GetCurrentBalance(c *gin.Context) {
@@ -54,16 +54,9 @@ func DefaultDashboardFunc(c *gin.Context, cacheKey, query string) {
 		return
 	}
 
-	userId, ok := c.Get("uid")
-	if !ok {
-		c.AbortWithStatusJSON(
-			http.StatusUnauthorized,
-			gin.H{"error": "user not found. please login again"},
-		)
-		return
-	}
+	userId := c.MustGet("userId").(uint)
 
-	GetTotalTransactionValue(query, value, userId.(uint))
+	GetTotalTransactionValue(query, value, userId)
 
 	formattedValue := fmt.Sprintf("R$%.2f", float64(value)/100)
 

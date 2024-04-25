@@ -8,8 +8,8 @@ RUN go mod download
 
 COPY . ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /go-expense-tracker ./cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o ./bin/go-expense-tracker ./cmd/api/main.go
 
 EXPOSE 80
 
-CMD ["/go-expense-tracker", "--port", "80"]
+CMD ["./bin/go-expense-tracker", "--port", "80"]

@@ -1,28 +1,26 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"go-expense-tracker/db"
-	"go-expense-tracker/models"
+	"go-expense-tracker/internal/db"
+	"go-expense-tracker/internal/models"
 )
-
-var secretKey = []byte("my-secret-string")
 
 func Signup(c *gin.Context) {
 	if _, err := c.Cookie("token"); err == nil {
-		c.Redirect(http.StatusFound, "/")
+		c.JSON(http.StatusUnauthorized, responseAlreadyLoggedIn)
 		return
 	}
 
 	var signupData models.UserPayload
 	if err := c.ShouldBindJSON(&signupData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, responseInvalidReqBody)
 		return
 	}
 
@@ -56,13 +54,13 @@ func Signup(c *gin.Context) {
 
 func Login(c *gin.Context) {
 	if _, err := c.Cookie("token"); err == nil {
-		c.Redirect(http.StatusFound, "/")
+		c.JSON(http.StatusUnauthorized, responseAlreadyLoggedIn)
 		return
 	}
 
 	var loginData models.LoginPayload
 	if err := c.ShouldBindJSON(&loginData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, responseInvalidReqBody)
 		return
 	}
 
@@ -90,53 +88,9 @@ func Signout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "signed out succesfully"})
 }
 
-func CheckLogin() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token, err := c.Cookie("token")
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "you are not logged in!"})
-			return
-		}
-
-		claims, err := getClaimsFromToken(token)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token!"})
-			return
-		}
-
-		userID, ok := claims["id"].(float64)
-		if !ok {
-			c.AbortWithStatusJSON(
-				http.StatusBadRequest,
-				gin.H{"error": "invalid user ID in token"},
-			)
-			return
-		}
-
-		c.Set("uid", uint(userID))
-		c.Next()
-	}
-}
-
-func getClaimsFromToken(tokenStr string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		return secretKey, nil
-	})
-	if err != nil || !token.Valid {
-		return nil, errors.New("invalid token")
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, errors.New("invalid token claims")
-	}
-
-	return claims, nil
-}
-
 func createToken(id uint) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id": id,
 	})
-	return token.SignedString(secretKey)
+	return token.SignedString(os.Getenv("SECRET_KEY"))
 }

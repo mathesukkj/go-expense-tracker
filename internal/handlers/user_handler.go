@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 
-	"go-expense-tracker/db"
-	"go-expense-tracker/models"
+	"go-expense-tracker/internal/db"
+	"go-expense-tracker/internal/models"
 )
 
 func GetUsers(c *gin.Context) {
@@ -33,7 +33,7 @@ func UpdateUser(c *gin.Context) {
 	var user models.UserPayload
 	var foundUser models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, responseInvalidReqBody)
 		return
 	}
 

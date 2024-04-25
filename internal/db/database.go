@@ -7,7 +7,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"go-expense-tracker/models"
+	"go-expense-tracker/internal/models"
 )
 
 var Gorm *gorm.DB
@@ -27,6 +27,7 @@ func Init() error {
 		dbPassword,
 		dbName,
 	)
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return err
